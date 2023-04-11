@@ -1,21 +1,31 @@
 -- Databricks notebook source
-WITH tb_join AS (
+WITH tb_pedidos AS(
+SELECT
+       DISTINCT
+       t1.idPedido,
+       t2.idVendedor
 
-    SELECT t2.*,
-           t3.idVendedor
+FROM silver.olist.pedido  AS t1
 
-    FROM silver.olist.pedido  AS t1
+LEFT JOIN silver.olist.item_pedido as t2
+on t1.idPedido = t2.idPedido
+
+WHERE t1.dtPedido < '2018-01-01'
+AND t1.dtPedido >= add_months('2018-01-01', -6)
+AND idVendedor IS NOT NULL
+),
+
+tb_join AS (
+
+    SELECT 
+          t1.idVendedor,
+          t2.*
+           
+
+    FROM tb_pedidos AS t1
 
     LEFT JOIN silver.olist.pagamento_pedido AS t2
     ON t1.idPedido = t2.idPedido
-
-    LEFT JOIN silver.olist.item_pedido AS t3
-    ON t1.idPedido = t3.idPedido
-
-    WHERE dtPedido < '2018-01-01'
-    AND dtPedido >= add_months('2018-01-01', -6)
-    AND t3.idVendedor IS NOT NULL
-
 ),
 
 tb_group AS (
@@ -56,7 +66,7 @@ sum(case when descTipoPagamento = 'voucher' then vlPedidoMeioPagamento else 0  e
 sum(case when descTipoPagamento = 'debit_card' then vlPedidoMeioPagamento else 0  end) / sum(vlPedidoMeioPagamento) as pct_valor_debit_pedido
 
 FROM tb_group
-GROUP BY 1
+GROUP BY idVendedor
 
 -- COMMAND ----------
 
