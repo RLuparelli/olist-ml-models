@@ -15,8 +15,9 @@ WITH tb_pedido AS (
     LEFT JOIN silver.olist.item_pedido AS t2
     ON t1.idPedido = t2.idPedido
 
-    WHERE dtPedido < '2018-01-01'
-    AND dtPedido >= add_months('2018-01-01', -6) 
+    WHERE t1.dtPedido < '2018-01-01'
+    AND t1.dtPedido >= add_months('2018-01-01', -6)
+    AND t2.idVendedor IS NOT NULL
 
     GROUP BY t1.idPedido,
            t2.idVendedor,
