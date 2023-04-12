@@ -27,8 +27,8 @@ WITH tb_pedido AS (
            t1.dtEntregue,
            t1.dtEstimativaEntrega
        
-)
-
+),
+tb_summary as(
 SELECT 
       idVendedor,
       count(distinct case when date(coalesce(dtEntregue, '2018-01-01')) >
@@ -49,3 +49,10 @@ FROM tb_pedido
 
 
 GROUP BY 1
+
+)
+
+SELECT  '2018-01-01' as dtReference,
+        *
+
+FROM tb_summary
