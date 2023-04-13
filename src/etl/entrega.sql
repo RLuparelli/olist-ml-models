@@ -1,4 +1,3 @@
--- Databricks notebook source
 WITH tb_pedido AS (
     SELECT t1.idPedido,
            t2.idVendedor,
@@ -15,8 +14,8 @@ WITH tb_pedido AS (
     LEFT JOIN silver.olist.item_pedido AS t2
     ON t1.idPedido = t2.idPedido
 
-    WHERE t1.dtPedido < '2018-01-01'
-    AND t1.dtPedido >= add_months('2018-01-01', -6)
+    WHERE t1.dtPedido < '{date}'
+    AND t1.dtPedido >= add_months('{date}', -6)
     AND t2.idVendedor IS NOT NULL
 
     GROUP BY t1.idPedido,
@@ -31,7 +30,7 @@ WITH tb_pedido AS (
 tb_summary as(
 SELECT 
       idVendedor,
-      count(distinct case when date(coalesce(dtEntregue, '2018-01-01')) >
+      count(distinct case when date(coalesce(dtEntregue, '{date}')) >
       date(dtEstimativaEntrega) then idPedido end) / count(distinct case when descSituacao =
       'delivered' THEN idPedido END) AS pctPedidoAtrado,
        count(distinct case when descSituacao = 'canceled' then idPedido end) / count(distinct idPedido) AS pctPedidoCancelado,
@@ -40,9 +39,9 @@ SELECT
        max(totalFrete) as maxFrete,
        min(totalFrete) as minFrete,
 --        Tempo Medio de Entrega
-       avg(datediff(coalesce(dtEntregue, '2018-01-01'), dtAprovado)) AS qtdDiasAprovadoEntrega,
-       avg(datediff(coalesce(dtEntregue, '2018-01-01'), dtPedido)) AS qtdDiasPedidoEntrega,
-       avg(datediff(dtEstimativaEntrega,coalesce(dtEntregue, '2018-01-01'))) AS qtdtDiasEntregaPromessa
+       avg(datediff(coalesce(dtEntregue, '{date}'), dtAprovado)) AS qtdDiasAprovadoEntrega,
+       avg(datediff(coalesce(dtEntregue, '{date}'), dtPedido)) AS qtdDiasPedidoEntrega,
+       avg(datediff(dtEstimativaEntrega,coalesce(dtEntregue, '{date}'))) AS qtdtDiasEntregaPromessa
 
 
 FROM tb_pedido
@@ -52,7 +51,8 @@ GROUP BY 1
 
 )
 
-SELECT  '2018-01-01' as dtReference,
+SELECT  '{date}' as dtReference,
+        NOW() as dtIngestion,
         *
 
 FROM tb_summary

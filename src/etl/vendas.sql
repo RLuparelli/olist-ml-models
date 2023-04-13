@@ -1,4 +1,3 @@
--- Databricks notebook source
 WITH tb_pedido_item AS(
 SELECT t2.*,
        t1.dtPedido
@@ -7,8 +6,8 @@ FROM silver.olist.pedido as t1
 LEFT JOIN silver.olist.item_pedido as t2
 ON t1.idpedido = t2.idPedido
 
-WHERE t1.dtPedido < '2018-01-01'
-AND t1.dtPedido >= add_months('2018-01-01', -6)
+WHERE t1.dtPedido < '{date}'
+AND t1.dtPedido >= add_months('{date}', -6)
 AND t2.idVendedor IS NOT NULL
 
 ),
@@ -19,12 +18,14 @@ SELECT
       count(distinct date(dtPedido)) AS qtdDias,
       count(idProduto) AS qtsItens,
 --       Dias Sem Vender -> diferenca da data de hoje e a data da venda
-       datediff('2018-01-01',max(dtPedido)) AS qtdRecencia,
+       datediff('{date}',max(dtPedido)) AS qtdRecencia,
 --       Ticket Medio
        sum(vlPreco) / count(distinct idPedido) as avgTicket,
        avg(vlPreco) AS avgValorProduto,
        max(vlPreco) AS maxValorProduto,
-       min(vlPreco) AS minValorProduto
+       min(vlPreco) AS minValorProduto,
+       count(idProduto) / count(distinct idPedido) as avgProdutoPedido
+
 
 FROM tb_pedido_item
 GROUP BY idVendedor
@@ -54,14 +55,14 @@ tb_min_max as(
 tb_life as (
 SELECT t2.idVendedor,
        sum(vlPreco) AS LTV,
-       max(datediff('2018-01-01', dtPedido)) AS qtdeDiasBase
+       max(datediff('{date}', dtPedido)) AS qtdeDiasBase
 
 FROM silver.olist.pedido as t1
 
 LEFT JOIN silver.olist.item_pedido as t2
 ON t1.idpedido = t2.idPedido
 
-WHERE t1.dtPedido < '2018-01-01'
+WHERE t1.dtPedido < '{date}'
 AND t2.idVendedor IS NOT NULL
 
 GROUP BY t2.idVendedor
@@ -94,11 +95,12 @@ GROUP BY idVendedor
 )
 
 SELECT 
-       '2018-01-01' as dtReference,
+       '{date}' as dtReference,
+       NOW() as dtIngestion,
        t1.*,
        t2.minVlPreco,
        t2.maxVlPreco,
-       t3.vlPreco,
+       -- t3.vlPreco,
        t4.LTV,
        t4.qtdeDiasBase,
        t5.avgIntervaloVendas
@@ -108,8 +110,8 @@ FROM tb_summary as t1
 LEFT JOIN tb_min_max as t2
 ON t1.idvendedor = t2.idVendedor
 
-LEFT JOIN tb_pedido_summary as t3
-ON t1.idvendedor = t3.idVendedor
+-- LEFT JOIN tb_pedido_summary as t3
+-- ON t1.idvendedor = t3.idVendedor
 
 LEFT JOIN tb_life as t4
 ON t1.idvendedor = t4.idVendedor

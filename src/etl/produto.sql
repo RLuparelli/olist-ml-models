@@ -1,4 +1,3 @@
--- Databricks notebook source
 WITH tb_join AS (
 SELECT DISTINCT
        
@@ -14,8 +13,8 @@ ON t1.idPedido = t2.idPedido
 LEFT JOIN  silver.olist.produto as t3
 ON t2.idProduto = t3.idProduto
 
-WHERE t1.dtPedido < '2018-01-01'
-AND t1.dtPedido >= add_months('2018-01-01', -6)
+WHERE t1.dtPedido < '{date}'
+AND t1.dtPedido >= add_months('{date}', -6)
 AND t2.idVendedor IS NOT NULL
 ),
 
@@ -48,25 +47,8 @@ SELECT idVendedor,
 FROM tb_join
 GROUP BY idVendedor
 )
-SELECT '2018-01-01' as dtReference,
+SELECT '{date}' as dtReference,
+        NOW() as dtIngestion,
        *
 
 FROM tb_summary
-
--- COMMAND ----------
-
-SELECT 
-       descCategoria,
-       COUNT(DISTINCT idPedido) as qtdePedido
-       
-       
-FROM silver.olist.item_pedido as t2
-
-LEFT JOIN  silver.olist.produto as t3
-ON t2.idProduto = t3.idProduto
-
-AND t2.idVendedor IS NOT NULL
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 30
-
