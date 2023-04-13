@@ -1,4 +1,3 @@
--- Databricks notebook source
 WITH tb_pedidos AS(
 SELECT
        DISTINCT
@@ -10,8 +9,8 @@ FROM silver.olist.pedido  AS t1
 LEFT JOIN silver.olist.item_pedido as t2
 on t1.idPedido = t2.idPedido
 
-WHERE t1.dtPedido < '2018-01-01'
-AND t1.dtPedido >= add_months('2018-01-01', -6)
+WHERE t1.dtPedido < '{date}'
+AND t1.dtPedido >= add_months('{date}', -6)
 AND idVendedor IS NOT NULL
 ),
 
@@ -87,7 +86,8 @@ tb_cartao AS (
   
 )
 SELECT
-       '2018-01-01' AS dtReference,
+       '{date}' AS dtReference,
+       NOW() as dtIngestion,
        t1.*,
        t2.avgQtdeParcelas,
        t2.medianQtdeParcelas,
@@ -98,4 +98,3 @@ FROM tb_summary as t1
 
 LEFT JOIN tb_cartao as t2
 ON t1.idVendedor = t2.idVendedor
-  
