@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install feature-engine
+# MAGIC %pip install feature-engine mlflow scikit-plot
 
 # COMMAND ----------
 
@@ -11,7 +11,7 @@ from sklearn import ensemble
 
 import scikitplot as skplt
 
-import lightgbm
+import mlflow
 
 
 from feature_engine import imputation
@@ -85,33 +85,50 @@ missing_0 = ['medianQtdeParcelas',
 
 # COMMAND ----------
 
-# DBTITLE 1,Transformando os dados errados
-imputer_minus_100 = imputation.ArbitraryNumberImputer(arbitrary_number=-100,
-                                                          variables=missing_minus_100)
-
-imputer_0 = imputation.ArbitraryNumberImputer(arbitrary_number=0,
-                                                  variables=missing_0)
+# DBTITLE 1,Definindo o Experimento
+mlflow.set_experiment("/Users/luparelli@hotmail.com.br/Olist-churn-lupa2")
 
 # COMMAND ----------
 
 # DBTITLE 1,Modelo
-model = tree.DecisionTreeClassifier()
+with mlflow.start_run():
 
-# COMMAND ----------
+    mlflow.sklearn.autolog()
+    
+    mlflow.autolog()
+    
+    ##Transformando os dados errados
 
-# DBTITLE 1,Passando o modelo no PipeLine 
-model_pipeline = pipeline.Pipeline([("Imputer -100", imputer_minus_100),
-                                        ("Imputer 0", imputer_0),
-                                        ("LGBM Model", model),
-                                        ])  
+    imputer_minus_100 = imputation.ArbitraryNumberImputer(arbitrary_number=-100,
+                                                              variables=missing_minus_100)
 
-# COMMAND ----------
+    imputer_0 = imputation.ArbitraryNumberImputer(arbitrary_number=0,
+                                                      variables=missing_0)
 
-# DBTITLE 1,Ajustando o Modelo
-model_pipeline.fit(X_train, y_train)
+    ##Modelo de arvore de decisao
+
+    model = tree.DecisionTreeClassifier(min_samples_leaf=25)
+
+    ##Passando o modelo no PipeLine 
+
+    model_pipeline = pipeline.Pipeline([("Imputer -100", imputer_minus_100),
+                                            ("Imputer 0", imputer_0),
+                                            ("Decision Tree", model),
+                                            ])  
+
+    ##Treinando o algoritimo
+
+    model_pipeline.fit(X_train, y_train)
+
+    auc_train = metrics.roc_auc_score(y_train, model_pipeline.predict_proba(X_train)[:,1])
+    auc_test = metrics.roc_auc_score(y_test, model_pipeline.predict_proba(X_test)[:,1])
+    auc_oot = metrics.roc_auc_score(df_oot[target], model_pipeline.predict_proba(df_oot[features])[:,1])
+
+    metrics_model = {"auc_train": auc_train,
+                        "auc_test": auc_test,
+                        "auc_oot": auc_oot}
 
 
-# COMMAND ----------
+    mlflow.log_metrics(metrics_model)
 
-# DBTITLE 1,Predicao
-model_pipeline.predict(X_test)
+
