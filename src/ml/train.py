@@ -107,22 +107,38 @@ with mlflow.start_run():
 
     ##Modelo de arvore de decisao
 
-    model = tree.DecisionTreeClassifier(min_samples_leaf=25)
+#     model = tree.DecisionTreeClassifier(min_samples_leaf=25)
+
+    model = ensemble.RandomForestClassifier(min_samples_leaf=5, 
+                                            n_jobs=-1, 
+                                            random_state=42, 
+                                            n_estimators=300)
 
     ##Passando o modelo no PipeLine 
 
     model_pipeline = pipeline.Pipeline([("Imputer -100", imputer_minus_100),
-                                            ("Imputer 0", imputer_0),
-                                            ("Decision Tree", model),
-                                            ])  
+                                        ("Imputer 0", imputer_0),
+                                        ("Decision Tree", model),
+                                        ])  
 
     ##Treinando o algoritimo
 
-    model_pipeline.fit(X_train, y_train)
+#     model_pipeline.fit(X_train, y_train)
+    
+    params = {"Decision Tree__min_samples_leaf": [5,12,20,50,100],
+              "Decision Tree__n_estimators":[300,400,450, 500]
+#             "min_child_samples": [20,30,40,50,100]             
+            }
+    
+    grid = model_selection.GridSearchCV(model_pipeline, params, cv=3, verbose=3, scoring='roc_auc')
+        
+    grid.fit(X_train, y_train)
 
-    auc_train = metrics.roc_auc_score(y_train, model_pipeline.predict_proba(X_train)[:,1])
-    auc_test = metrics.roc_auc_score(y_test, model_pipeline.predict_proba(X_test)[:,1])
-    auc_oot = metrics.roc_auc_score(df_oot[target], model_pipeline.predict_proba(df_oot[features])[:,1])
+
+
+    auc_train = metrics.roc_auc_score(y_train, grid.predict_proba(X_train)[:,1])
+    auc_test = metrics.roc_auc_score(y_test, grid.predict_proba(X_test)[:,1])
+    auc_oot = metrics.roc_auc_score(df_oot[target], grid.predict_proba(df_oot[features])[:,1])
 
     metrics_model = {"auc_train": auc_train,
                         "auc_test": auc_test,
