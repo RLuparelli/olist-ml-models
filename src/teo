@@ -1,0 +1,20 @@
+name: sync_databricks_workflows
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync_jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar ambiente Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+      - name: Instalando Requerimentos
+        working-directory: src/04.workflows
+        run: pip install -r requirements.txt
+      - name: Sync dos Jobs
+        working-directory: src/04.workflows
+        run: python sync_jobs.py
